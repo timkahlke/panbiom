@@ -35,11 +35,43 @@ import itertools
 
 def main(args):
     input_table= load_table(args.biom)
+    
+    treats = []
+    if args.treatments:
+        treats = _getT(args.treatments)
+    else:
+        treats = np.ndarray.tolist(input_table.ids())
 
+    # get treatment indices
+    inds = [np.ndarray.tolist(input_table.ids()).index(x) for x in treats]
+
+    core = "test"
+    for i in inds:
+        tc = [y for (x,y) in enumerate(input_table.ids(axis="observation")) if input_table[x,i] > args.abundance_minimum]
+        if core != "test":
+            core = [x for x in tc if x in core]
+        else:
+            core = tc
+    output = open(args.output,"w")
+    output.write("# Core OTUs of file %s: %d \n" % (args.biom,len(core)))
+    
+    for c in core:
+        output.write("%s\t%s\n" %(c,";".join(input_table.metadata(axis="observation")[int(np.where(input_table.ids(axis="observation")==c)[0])]['taxonomy'])))
+
+    output.close()
+
+
+
+
+
+
+
+
+def _curve_val(table):
     co = 0
-    for i in range(1,len(input_table.ids(axis="observation"))-1):
+    for i in range(1,len(table.ids(axis="observation"))-1):
         print("\nCreating combinations of %d\n" % (i))
-        combs = itertools.combinations(range(0,len(input_table.ids(axis="observation"))-1),i)
+        combs = itertools.combinations(range(0,len(table.ids(axis="observation"))-1),i)
         for c in combs:
             co+=1
     print(str(co))
@@ -47,8 +79,15 @@ def main(args):
 
 #    print(input_table.metadata(axis="observation")[-6]['taxonomy'])
 #    print([method for method in dir(input_table) if callable(getattr(input_table, method))])
-   
+  
 
+
+def _getT(fp):
+    td =[] 
+    with open(fp,"r") as f:
+        for line in f:
+            td.append(line.replace("\n",""))
+    return td
 
 
 
@@ -57,7 +96,7 @@ if __name__=="__main__":
     parser.add_argument("biom", help="OTU table in biom format")
     parser.add_argument("output", help="Directory for output files")
     parser.add_argument("-t","--treatments", help="File of treatments that should be considered. Otherwise all samples/treatments are used for the analysis")
-    parser.add_argument("-m", "--abundance_minimum", help="Abundance minimum. If set only OTUs with given relative abundance are considered")
+    parser.add_argument("-m", "--abundance_minimum", help="Abundance minimum. If set only OTUs with given relative abundance are considered", type=float, default=0.0)
 
     args = parser.parse_args()
     main(args)
