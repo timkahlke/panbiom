@@ -47,7 +47,7 @@ def main(args):
 
     core = "test"
     for i in inds:
-        tc = [y for (x,y) in enumerate(input_table.ids(axis="observation")) if input_table[x,i] > args.abundance_minimum]
+        tc = [y for (x,y) in enumerate(input_table.ids(axis="observation")) if input_table[x,i] >= args.abundance_minimum]
         if core != "test":
             core = [x for x in tc if x in core]
         else:
