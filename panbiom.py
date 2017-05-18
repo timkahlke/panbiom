@@ -6,6 +6,7 @@ import sys
 import numpy as np
 from biom import load_table, Table
 import itertools
+import logging
 
 ###
 #   Script to estimate core, accessory and unique OTUs of treatments in a given biom file.
@@ -35,23 +36,31 @@ import itertools
 
 def main(args):
     input_table= load_table(args.biom)
-    
+    logging.basicConfig(format='',level=logging.INFO)
+    logger = logging.getLogger()
+
     treats = []
     if args.treatments:
         treats = _getT(args.treatments)
     else:
         treats = np.ndarray.tolist(input_table.ids())
 
+
+    logger.info("[STATUS] Getting sample indices")
     # get treatment indices
     inds = [np.ndarray.tolist(input_table.ids()).index(x) for x in treats]
 
+    logger.info("[STATUS] Extracting core OTUs")
     core = "test"
     for i in inds:
-        tc = [y for (x,y) in enumerate(input_table.ids(axis="observation")) if input_table[x,i] >= args.abundance_minimum]
+        tc = [y for (x,y) in enumerate(input_table.ids(axis="observation")) if input_table[x,i] and input_table[x,i] >= args.abundance_minimum]
         if core != "test":
             core = [x for x in tc if x in core]
         else:
             core = tc
+
+    logger.info("\n[STATUS] Done! No of core OTUs: %d\n\n" % (len(core)))
+
     output = open(args.output,"w")
     output.write("# Core OTUs of file %s: %d \n" % (args.biom,len(core)))
     
