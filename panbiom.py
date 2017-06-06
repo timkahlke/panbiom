@@ -39,6 +39,9 @@ def main(args):
     logging.basicConfig(format='',level=logging.INFO)
     logger = logging.getLogger()
 
+    # If treatmenst are given get treatment names
+    # Additionally, if reps in treatment file get names of reps
+    # else reps are empty and treats = whole data set
     if args.treatments:
         (treats,reps) = _getT(args.treatments)
     else:
@@ -46,22 +49,16 @@ def main(args):
         reps = ()
 
 
-    logger.info("[STATUS] Getting sample indices")
-    # get treatment indices
+    # get treatment indices/data set table indices
     inds = _get_inds(input_table,treats)
 
     # get abundance threshold
     thresh = _get_threshold(input_table,inds,args.abundance_parameter,args.abundance_minimum)
 
-
-    logger.info("[STATUS] Extracting core OTUs")
-    core = 0 
-    for i in inds:
-        tc = [y for (x,y) in enumerate(input_table.ids(axis="observation")) if input_table[x,i] and input_table[x,i] >= args.abundance_minimum]
-        if core :
-            core = [x for x in tc if x in core]
-        else:
-            core = tc
+    if len(reps):
+        core = _get_rep_core_otus(biom,thresh,reps)
+    else:
+        core = _get_all_core_otus(biom,thresh,inds)
 
     logger.info("\n[STATUS] Done! No of core OTUs: %d\n\n" % (len(core)))
 
@@ -74,12 +71,45 @@ def main(args):
     output.close()
 
 
+# get core wrt replicates/groups threshold
+def _get_rep_core_otus(biom,thresh,reps,rt):
+    core = -1 
+    for r in reps:
+        rep_core = []
+        inds = _get_inds(biom,reps[r])
+        for (x,y) in enumerate(biom.ids(axis="observation")):
+            tmp = [i for i in inds if biom[x,i] >= thresh]
+            if len(tmp) >= rt:
+                rep_core.append(y)
+        if core == -1:
+            core = rep_core
+        else:
+            core = [x for x in rep_core if x in core]
+    return core 
 
+
+
+# Get core for all treatments (regardless of replicates/groups)
+def _get_all_core_otus(biom,thresh,inds):
+    core = -1
+    for i in inds:
+        tc = [y for (x,y) in enumerate(biom.ids(axis="observation")) if biom[x,i] and biom[x,i] >= thresh]
+        if core == -1:
+            core = tc
+        else:
+            core = [x for x in tc if x in core]
+
+    return core
+
+
+# return indices of given sample names
 def _get_inds(biom,names):
     inds = [np.ndarray.tolist(biom.ids()).index(x) for x in names]
     return inds
 
 
+# calculate thresholds based on either complete
+# data set or treatments
 def _get_threshold(biom,tind,tt,th):
 
     # get sum of treatments
@@ -92,9 +122,6 @@ def _get_threshold(biom,tind,tt,th):
         return all_cs.sum()*th
 
 
-
-
-
 def _curve_val(table):
     co = 0
     for i in range(1,len(table.ids(axis="observation"))-1):
@@ -103,7 +130,6 @@ def _curve_val(table):
         for c in combs:
             co+=1
     print(str(co))
-
 
 #    print(input_table.metadata(axis="observation")[-6]['taxonomy'])
 #    print([method for method in dir(input_table) if callable(getattr(input_table, method))])
