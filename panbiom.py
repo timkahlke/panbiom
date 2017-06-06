@@ -39,22 +39,26 @@ def main(args):
     logging.basicConfig(format='',level=logging.INFO)
     logger = logging.getLogger()
 
-    treats = []
     if args.treatments:
-        treats = _getT(args.treatments)
+        (treats,reps) = _getT(args.treatments)
     else:
         treats = np.ndarray.tolist(input_table.ids())
+        reps = ()
 
 
     logger.info("[STATUS] Getting sample indices")
     # get treatment indices
-    inds = [np.ndarray.tolist(input_table.ids()).index(x) for x in treats]
+    inds = _get_inds(input_table,treats)
+
+    # get abundance threshold
+    thresh = _get_threshold(input_table,inds,args.abundance_parameter,args.abundance_minimum)
+
 
     logger.info("[STATUS] Extracting core OTUs")
-    core = "test"
+    core = 0 
     for i in inds:
         tc = [y for (x,y) in enumerate(input_table.ids(axis="observation")) if input_table[x,i] and input_table[x,i] >= args.abundance_minimum]
-        if core != "test":
+        if core :
             core = [x for x in tc if x in core]
         else:
             core = tc
@@ -71,6 +75,21 @@ def main(args):
 
 
 
+def _get_inds(biom,names):
+    inds = [np.ndarray.tolist(biom.ids()).index(x) for x in names]
+    return inds
+
+
+def _get_threshold(biom,tind,tt,th):
+
+    # get sum of treatments
+    all_cs = biom.sum(axis="sample")
+    treat_cs = all_cs[tind[:None],]
+
+    if tt == "t":
+        return treat_cs.sum()*th
+    else:
+        return all_cs.sum()*th
 
 
 
@@ -90,13 +109,21 @@ def _curve_val(table):
 #    print([method for method in dir(input_table) if callable(getattr(input_table, method))])
   
 
-
+# Get names of samples and, if given, replicates
 def _getT(fp):
     td =[] 
+    reps = {}
     with open(fp,"r") as f:
         for line in f:
-            td.append(line.replace("\n",""))
-    return td
+            tabs = line.replace("\n","").split("\t")
+            if len(tabs) == 2:
+                if tabs[1] in reps:
+                    reps[tabs[1]].append(tabs[0])
+                else:
+                    reps[tabs[1]] = (tabs[0])
+            elif len(tabs) == 1:
+                td.append(tabs[0])
+    return (td,reps)
 
 
 
@@ -106,6 +133,8 @@ if __name__=="__main__":
     parser.add_argument("output", help="Directory for output files")
     parser.add_argument("-t","--treatments", help="File of treatments that should be considered. Otherwise all samples/treatments are used for the analysis")
     parser.add_argument("-m", "--abundance_minimum", help="Abundance minimum. If set only OTUs with given relative abundance are considered", type=float, default=0.0)
+    parser.add_argument("-p", "--abundance_parameter", help="Whether abundance threshold is wrt the complete biom data (c) or only the counts fo the given treatment group (t) (default = t)", default="t")
+    parser.add_argument("-r", "--replicate_threshold", help="If set at least the given number of replicates/samples of the same group have to make the given abundance threshold")
 
     args = parser.parse_args()
     main(args)
