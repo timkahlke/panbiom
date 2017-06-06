@@ -1,7 +1,7 @@
 # panbiom
 Estimation of a pan-microbiom.
 
-For usage examples see the WIKI
+For usage examples see the WIKI at https://github.com/timkahlke/panbiom/wiki
 
 
 # Usage
