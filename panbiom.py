@@ -47,18 +47,16 @@ def main(args):
     else:
         treats = np.ndarray.tolist(input_table.ids())
         reps = ()
-
-
     # get treatment indices/data set table indices
     inds = _get_inds(input_table,treats)
 
     # get abundance threshold
     thresh = _get_threshold(input_table,inds,args.abundance_parameter,args.abundance_minimum)
 
-    if len(reps):
-        core = _get_rep_core_otus(biom,thresh,reps)
+    if args.replicate_threshold:
+        core = _get_rep_core_otus(input_table,thresh,reps,args.replicate_threshold)
     else:
-        core = _get_all_core_otus(biom,thresh,inds)
+        core = _get_all_core_otus(input_table,thresh,inds)
 
     logger.info("\n[STATUS] Done! No of core OTUs: %d\n\n" % (len(core)))
 
@@ -81,6 +79,7 @@ def _get_rep_core_otus(biom,thresh,reps,rt):
             tmp = [i for i in inds if biom[x,i] >= thresh]
             if len(tmp) >= rt:
                 rep_core.append(y)
+
         if core == -1:
             core = rep_core
         else:
@@ -146,7 +145,8 @@ def _getT(fp):
                 if tabs[1] in reps:
                     reps[tabs[1]].append(tabs[0])
                 else:
-                    reps[tabs[1]] = (tabs[0])
+                    reps[tabs[1]] = [tabs[0]]
+                td.append(tabs[0])
             elif len(tabs) == 1:
                 td.append(tabs[0])
     return (td,reps)
@@ -159,8 +159,8 @@ if __name__=="__main__":
     parser.add_argument("output", help="Directory for output files")
     parser.add_argument("-t","--treatments", help="File of treatments that should be considered. Otherwise all samples/treatments are used for the analysis")
     parser.add_argument("-m", "--abundance_minimum", help="Abundance minimum. If set only OTUs with given relative abundance are considered", type=float, default=0.0)
-    parser.add_argument("-p", "--abundance_parameter", help="Whether abundance threshold is wrt the complete biom data (c) or only the counts fo the given treatment group (t) (default = t)", default="t")
-    parser.add_argument("-r", "--replicate_threshold", help="If set at least the given number of replicates/samples of the same group have to make the given abundance threshold")
+    parser.add_argument("-p", "--abundance_parameter", help="Whether abundance threshold is wrt the complete biom data (c) or only the counts fo the given treatment group (t) (default = t)", default="t", choices=["t","c"])
+    parser.add_argument("-r", "--replicate_threshold", help="If set at least the given number of replicates/samples of the same group have to make the given abundance threshold",type=int)
 
     args = parser.parse_args()
     main(args)
