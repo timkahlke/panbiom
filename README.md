@@ -11,7 +11,7 @@ panbiom.py [options] BIOM_FILE OUTPUT_FILE
 -t, --treatments 
 List of samples (treatments) that should be considered for analysis
 
--m, --abundance_minimum: Minimum abundance an OTU must have to be considered present (default: 0.0)
+-m, --abundance_minimum: Minimum abundance (between 0-1) an OTU must have to be considered present (default: 0.0)
 
 -p, --abundance_parameter: Defines whether the abundance threshold should be based on the complete data set (c) or on the defined treatments (t) (default: t)
 
