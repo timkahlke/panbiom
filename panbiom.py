@@ -76,7 +76,7 @@ def _get_rep_core_otus(biom,thresh,reps,rt):
         rep_core = []
         inds = _get_inds(biom,reps[r])
         for (x,y) in enumerate(biom.ids(axis="observation")):
-            tmp = [i for i in inds if biom[x,i] >= thresh]
+            tmp = [i for i in inds if biom[x,i] > thresh]
             if len(tmp) >= rt:
                 rep_core.append(y)
 
@@ -140,7 +140,7 @@ def _getT(fp):
     reps = {}
     with open(fp,"r") as f:
         for line in f:
-            tabs = line.replace("\n","").split("\t")
+            tabs = line.replace("\n","").replace("\r","").split("\t")
             if len(tabs) == 2:
                 if tabs[1] in reps:
                     reps[tabs[1]].append(tabs[0])
