@@ -39,6 +39,7 @@ def main(args):
     logging.basicConfig(format='',level=logging.INFO)
     logger = logging.getLogger()
 
+
     # If treatmenst are given get treatment names
     # Additionally, if reps in treatment file get names of reps
     # else reps are empty and treats = whole data set
@@ -51,12 +52,12 @@ def main(args):
     inds = _get_inds(input_table,treats)
 
     # get abundance threshold
-    thresh = _get_threshold(input_table,inds,args.abundance_parameter,args.abundance_minimum)
+    sums = _get_sample_sums(input_table,inds)
 
     if args.replicate_threshold:
-        core = _get_rep_core_otus(input_table,thresh,reps,args.replicate_threshold)
+        core = _get_rep_core_otus(input_table,sums,reps,args.replicate_threshold,inds,args.abundance_minimum)
     else:
-        core = _get_all_core_otus(input_table,thresh,inds)
+        core = _get_all_core_otus(input_table,sums,inds,args.abundance_minimum)
 
     logger.info("\n[STATUS] Done! No of core OTUs: %d\n\n" % (len(core)))
 
@@ -64,19 +65,22 @@ def main(args):
     output.write("# Core OTUs of file %s: %d \n" % (args.biom,len(core)))
     
     for c in core:
-        output.write("%s\t%s\n" %(c,";".join(input_table.metadata(axis="observation")[int(np.where(input_table.ids(axis="observation")==c)[0])]['taxonomy'])))
+        if args.print_taxonomy == "True": 
+            output.write("%s\t%s\n" %(c,";".join(input_table.metadata(axis="observation")[int(np.where(input_table.ids(axis="observation")==c)[0])]['taxonomy'])))
+        else:
+            output.write("%s\n" % (c))
 
     output.close()
 
 
 # get core wrt replicates/groups threshold
-def _get_rep_core_otus(biom,thresh,reps,rt):
+def _get_rep_core_otus(biom,sums,reps,rt,all_inds,ab_min):
     core = -1 
     for r in reps:
         rep_core = []
         inds = _get_inds(biom,reps[r])
         for (x,y) in enumerate(biom.ids(axis="observation")):
-            tmp = [i for i in inds if biom[x,i] > thresh]
+            tmp = [i for i in inds if biom[x,i] > sums[all_inds.index(i)] * ab_min]
             if len(tmp) >= rt:
                 rep_core.append(y)
 
@@ -89,10 +93,10 @@ def _get_rep_core_otus(biom,thresh,reps,rt):
 
 
 # Get core for all treatments (regardless of replicates/groups)
-def _get_all_core_otus(biom,thresh,inds):
+def _get_all_core_otus(biom,sums,inds,ab_min):
     core = -1
     for i in inds:
-        tc = [y for (x,y) in enumerate(biom.ids(axis="observation")) if biom[x,i] and biom[x,i] >= thresh]
+        tc = [y for (x,y) in enumerate(biom.ids(axis="observation")) if biom[x,i] and biom[x,i] >= sums[inds.index(i)] * ab_min]
         if core == -1:
             core = tc
         else:
@@ -109,16 +113,12 @@ def _get_inds(biom,names):
 
 # calculate thresholds based on either complete
 # data set or treatments
-def _get_threshold(biom,tind,tt,th):
+def _get_sample_sums(biom,tind):
 
-    # get sum of treatments
+    # get array of sum per sample/treatments
+
     all_cs = biom.sum(axis="sample")
-    treat_cs = all_cs[tind[:None],]
-
-    if tt == "t":
-        return treat_cs.sum()*th
-    else:
-        return all_cs.sum()*th
+    return all_cs[tind[:None],]
 
 
 def _curve_val(table):
@@ -159,8 +159,8 @@ if __name__=="__main__":
     parser.add_argument("output", help="Directory for output files")
     parser.add_argument("-t","--treatments", help="File of treatments that should be considered. Otherwise all samples/treatments are used for the analysis")
     parser.add_argument("-m", "--abundance_minimum", help="Abundance minimum. If set only OTUs with given relative abundance are considered", type=float, default=0.0)
-    parser.add_argument("-p", "--abundance_parameter", help="Whether abundance threshold is wrt the complete biom data (c) or only the counts fo the given treatment group (t) (default = t)", default="t", choices=["t","c"])
     parser.add_argument("-r", "--replicate_threshold", help="If set at least the given number of replicates/samples of the same group have to make the given abundance threshold",type=int)
+    parser.add_argument("-p", "--print_taxonomy", help="If set to False no taxonomy will be printed to result file (default=True)", default="True")
 
     args = parser.parse_args()
     main(args)
