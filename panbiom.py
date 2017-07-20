@@ -55,7 +55,7 @@ def main(args):
     sums = _get_sample_sums(input_table,inds)
 
     if args.replicate_threshold:
-        core = _get_rep_core_otus(input_table,sums,reps,args.replicate_threshold,inds,args.abundance_minimum)
+        core = _get_rep_core_otus(input_table,sums,reps,args.replicate_threshold,inds,args.abundance_minimum,args.exclude)
     else:
         core = _get_all_core_otus(input_table,sums,inds,args.abundance_minimum)
 
@@ -74,14 +74,19 @@ def main(args):
 
 
 # get core wrt replicates/groups threshold
-def _get_rep_core_otus(biom,sums,reps,rt,all_inds,ab_min):
+def _get_rep_core_otus(biom,sums,reps,rt,all_inds,ab_min,rta):
     core = -1 
     for r in reps:
         rep_core = []
         inds = _get_inds(biom,reps[r])
+        min_samples = 0
+        if rta == 'r':
+            min_samples = rt
+        else:
+            min_samples = len(inds) - rt
         for (x,y) in enumerate(biom.ids(axis="observation")):
             tmp = [i for i in inds if biom[x,i] > sums[all_inds.index(i)] * ab_min]
-            if len(tmp) >= rt:
+            if len(tmp) >= min_samples:
                 rep_core.append(y)
 
         if core == -1:
@@ -161,6 +166,7 @@ if __name__=="__main__":
     parser.add_argument("-m", "--abundance_minimum", help="Abundance minimum. If set only OTUs with given relative abundance are considered", type=float, default=0.0)
     parser.add_argument("-r", "--replicate_threshold", help="If set at least the given number of replicates/samples of the same group have to make the given abundance threshold",type=int)
     parser.add_argument("-p", "--print_taxonomy", help="If set to False no taxonomy will be printed to result file (default=True)", default="True")
+    parser.add_argument("-x", "--exclude", help="If set to x the replicate threshold will be interpreted as the maximum outliers that can be excluded per treatment.", default="r", choices=['r','x'])
 
     args = parser.parse_args()
     main(args)
