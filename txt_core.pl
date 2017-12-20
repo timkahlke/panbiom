@@ -38,7 +38,7 @@ sub _main{
     }
 
     my $core;
-    if(scalar(keys(%$reps))){
+    if($reps){
         if(!($rep_out)){
             print STDOUT "\n[ERROR] No replicate outlier count specified with option -t!!!\n\n";
             _usage();
