@@ -17,7 +17,7 @@ if($@){
 
 sub _main{
     our %opts;
-    getopts("t:g:i:o:x:am:",\%opts);
+    getopts("t:g:i:o:xam:",\%opts);
 
     my $in = $opts{'i'};
     my $out = $opts{'o'};
@@ -32,14 +32,13 @@ sub _main{
     }
 
     my ($data,$colh,$rowh) = _get_data($in,$horizontal,$samples);
-
     if(!($rel_ab)){
         $data = _get_rel($data);
     }
 
     my $core;
-    if($reps){
-        if(!($rep_out)){
+    if(scalar(keys(%$reps))){
+        if(!(defined($rep_out))){
             print STDOUT "\n[ERROR] No replicate outlier count specified with option -t!!!\n\n";
             _usage();
         }
@@ -79,7 +78,6 @@ sub _get_rep_core{
             push @$core,$i;
         }
     }
-    die Dumper $core;
     return $core;
 }
 
@@ -104,6 +102,8 @@ sub _get_map{
 
 sub _get_core{
     my ($data,$min,$colh) = @_;
+
+
     my $core = [];
     for(my $i = 0;$i<scalar(@$data);$i++){
         if($colh){
@@ -195,8 +195,7 @@ sub _get_data{
     
     while(my $line=<$ih>){
         if($.==1){
-            $ch = _get_rheader($line,$samples);
-            next;
+            $ch = _get_rheader($line);
         }
         my $s=_split_line($line);
         $rh->{shift(@$s)} = scalar(keys(%$rh));
@@ -216,8 +215,36 @@ sub _get_data{
         }
     }
     close($ih);
+    if($samples){
+        if($hor){
+            my $nch = _clean_header($samples,$rh);
+            $rh = $ch;
+            $ch = $nch;
+        }
+        else{
+            $ch = _clean_header($samples,$ch);
+        }
+    }
+    else{
+        if($hor){
+            my $tmp = $rh;
+            $rh = $ch;
+            $ch = $tmp;
+        }
+    }
     return ($data,$ch,$rh);
 }
+
+sub _clean_header{
+    my ($samples,$h) = @_;
+    my $nh = {};
+    foreach my $oh(keys(%$h)){
+        next unless $samples->{$oh};
+        $nh->{$oh} = $h->{$oh};
+    }
+    return $nh;
+}
+
 
 
 sub _split_line{
@@ -229,13 +256,10 @@ sub _split_line{
 
 
 sub _get_rheader{
-    my ($line,$samples) = @_;
+    my $line = shift;
     my $rheader = {};
     my $s=_split_line($line);
     for(my $i=1;$i<scalar(@$s);$i++){
-        if($samples){
-            next unless $samples->{$s->[$i]};
-        }
         $rheader->{$s->[$i]} = $i-1;
     }   
     return $rheader;
