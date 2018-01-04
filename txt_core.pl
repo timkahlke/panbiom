@@ -49,6 +49,14 @@ sub _main{
     }
 
     print STDOUT "\n\nCore of given data and parameters: ".scalar(@$core)."\n\n";
+    open(my $oh,">",$out) or die "Failed to open $out";
+    foreach my $ci($core){
+        foreach my $k(keys(%$rowh)){
+            next unless $ci == $rowh->{$k};
+            print $oh "$k\n";
+        }
+    }
+    close($oh);
 }
 
 
@@ -198,7 +206,7 @@ sub _get_data{
             $ch = _get_rheader($line);
         }
         my $s=_split_line($line);
-        $rh->{shift(@$s)} = scalar(keys(%$rh));
+        $rh->{shift(@$s)} = (scalar(keys(%$rh)))-1;
 
         if(!($hor)){
             push @$data, $s;
