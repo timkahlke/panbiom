@@ -50,7 +50,7 @@ sub _main{
 
     print STDOUT "\n\nCore of given data and parameters: ".scalar(@$core)."\n\n";
     open(my $oh,">",$out) or die "Failed to open $out";
-    foreach my $ci($core){
+    foreach my $ci(@$core){
         foreach my $k(keys(%$rowh)){
             next unless $ci == $rowh->{$k};
             print $oh "$k\n";
@@ -63,12 +63,16 @@ sub _main{
 sub _get_rep_core{
     my ($data,$min,$colh,$reps,$ol) = @_;
     my $core = [];
+
+    # Foreach row
     for(my $i = 0;$i<scalar(@$data);$i++){
         my $row = $data->[$i];
         my $cgc = 0;
         my $ca = [];
+        # Foreach replicate group
         foreach my $rg(keys(%$reps)){
             my $ro = 0;
+            # Foreach replicate
             foreach my $s(keys(%{$reps->{$rg}})){
                 if($row->[$colh->{$s}]<$min){
                     $ro++;
@@ -77,11 +81,12 @@ sub _get_rep_core{
                     push @$ca,$row->[$colh->{$s}];
                 }
             }
+            # If less than allowed outlier than this replicate group is ok
             if($ro<=$ol){
-                warn Dumper $ca;
                 $cgc++;
             }
         }
+        # If all replicate groups are ok add it to core
         if($cgc == scalar(keys(%$reps))){
             push @$core,$i;
         }
@@ -204,6 +209,7 @@ sub _get_data{
     while(my $line=<$ih>){
         if($.==1){
             $ch = _get_rheader($line);
+            next;
         }
         my $s=_split_line($line);
         $rh->{shift(@$s)} = (scalar(keys(%$rh)))-1;
