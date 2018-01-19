@@ -27,6 +27,7 @@ sub _main{
     my ($samples,$reps) = $opts{'g'}?_get_map($opts{'g'}):(0,0);
     my $rep_out = $opts{'t'};
 
+
     if(!$in||!$out){
         _usage();
     }
@@ -212,7 +213,7 @@ sub _get_data{
             next;
         }
         my $s=_split_line($line);
-        $rh->{shift(@$s)} = (scalar(keys(%$rh)))-1;
+        $rh->{shift(@$s)} = (scalar(keys(%$rh)));
 
         if(!($hor)){
             push @$data, $s;
