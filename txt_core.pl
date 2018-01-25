@@ -25,6 +25,8 @@ sub _main{
     my $horizontal = $opts{'x'};
     my $min = $opts{'m'}?$opts{'m'}:0;
     my ($samples,$reps) = $opts{'g'}?_get_map($opts{'g'}):(0,0);
+
+
     my $rep_out = $opts{'t'};
 
 
@@ -33,6 +35,9 @@ sub _main{
     }
 
     my ($data,$colh,$rowh) = _get_data($in,$horizontal,$samples);
+
+
+
     if(!($rel_ab)){
         $data = _get_rel($data);
     }
@@ -172,7 +177,12 @@ sub _get_rel{
     foreach my $r(@$d){
         my $nl = [];
         for(my $i=0;$i<scalar(@$r);$i++){
-            $nl->[$i] = (($r->[$i]*100)/$col_sums->[$i]);     
+            if($col_sums->[$i]){
+                $nl->[$i] = (($r->[$i]*100)/$col_sums->[$i]);     
+            }
+            else{
+                $nl->[$i] = 0;
+            }
         }
         push @rel_data,$nl;
     }
@@ -182,7 +192,12 @@ sub _get_rel{
 
 sub _rel{
     my ($v,$s) = @_;
-    return (($v*100)/$s);
+    if($s){
+        return (($v*100)/$s);
+    }
+    else{
+        return 0;
+    }
 }
 
 
