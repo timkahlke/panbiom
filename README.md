@@ -1,5 +1,9 @@
 # panbiom
-Estimation of a pan-microbiom.
+Estimation of core OTUs in a given OTU sample. Possible parameters are 
+
+* per sample percentage
+* Allowed outliers per replicate group
+* Core OTUs of sub-groups
 
 For usage examples see the WIKI at https://github.com/timkahlke/panbiom/wiki
 
